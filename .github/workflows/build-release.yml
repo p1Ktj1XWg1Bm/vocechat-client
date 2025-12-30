@@ -31,6 +31,11 @@ jobs:
     - name: Get dependencies
       run: flutter pub get
 
+    - name: Patch third-party dependencies
+      run: |
+        chmod +x .github/scripts/patch-dependencies.sh
+        .github/scripts/patch-dependencies.sh
+
     # 如果配置了签名，使用以下步骤
     - name: Decode Keystore
       if: ${{ secrets.KEYSTORE_BASE64 != '' }}
