@@ -39,8 +39,8 @@ if [ -d "$CONNECTIVITY_PATH" ]; then
 
     MANIFEST_FILE="$CONNECTIVITY_PATH/android/src/main/AndroidManifest.xml"
     if [ -f "$MANIFEST_FILE" ]; then
-        # 移除 package 属性，但保留 xmlns:android
-        sed -i 's/<manifest[^>]*package="[^"]*"/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/g' "$MANIFEST_FILE"
+        # 直接移除 package 属性，保留其他所有属性
+        sed -i 's/ package="[^"]*"//g' "$MANIFEST_FILE"
         echo "✓ Patched AndroidManifest.xml (removed package attribute)"
     fi
 else
@@ -57,8 +57,8 @@ if [ -d "$PDFVIEW_PATH" ]; then
 
     MANIFEST_FILE="$PDFVIEW_PATH/android/src/main/AndroidManifest.xml"
     if [ -f "$MANIFEST_FILE" ]; then
-        # 移除 package 属性，但保留 xmlns:android
-        sed -i 's/<manifest[^>]*package="[^"]*"/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/g' "$MANIFEST_FILE"
+        # 直接移除 package 属性，保留其他所有属性
+        sed -i 's/ package="[^"]*"//g' "$MANIFEST_FILE"
         echo "✓ Patched AndroidManifest.xml (removed package attribute)"
     fi
 else
