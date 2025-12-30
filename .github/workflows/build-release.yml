@@ -1,0 +1,85 @@
+name: Build Release APK
+
+# 仅在创建 tag 时触发 release 构建
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.9'
+        channel: 'stable'
+        cache: true
+
+    - name: Get dependencies
+      run: flutter pub get
+
+    # 如果配置了签名，使用以下步骤
+    - name: Decode Keystore
+      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      run: |
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+
+    - name: Create key.properties
+      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      run: |
+        cat > android/key.properties << EOF
+        storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+        keyPassword=${{ secrets.KEY_PASSWORD }}
+        keyAlias=${{ secrets.KEY_ALIAS }}
+        storeFile=upload-keystore.jks
+        EOF
+
+    # 构建 Release APK
+    - name: Build Release APK
+      run: flutter build apk --release
+
+    # 构建 App Bundle (用于 Google Play)
+    - name: Build App Bundle
+      run: flutter build appbundle --release
+
+    # 上传 APK
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: vocechat-release-apk-${{ github.ref_name }}
+        path: build/app/outputs/flutter-apk/app-release.apk
+        retention-days: 90
+
+    # 上传 App Bundle
+    - name: Upload App Bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: vocechat-bundle-${{ github.ref_name }}
+        path: build/app/outputs/bundle/release/app-release.aab
+        retention-days: 90
+
+    # 如果是 tag push，创建 GitHub Release
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          build/app/outputs/flutter-apk/app-release.apk
+          build/app/outputs/bundle/release/app-release.aab
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
